@@ -1,33 +1,28 @@
 package net.novalab.chronus.business.capacity.entity;
 
+import net.novalab.chronus.business.reservation.entity.Facility;
+
 import java.time.LocalDateTime;
+import java.util.NavigableSet;
 
 public class Capacity {
-    private LocalDateTime start;
-    private LocalDateTime end;
-    private double qty;
+    private Facility facility;
+    private NavigableSet<CapacityDetail> details;
 
-    public LocalDateTime getStart() {
-        return start;
+
+    public Facility getFacility() {
+        return facility;
     }
 
-    public void setStart(LocalDateTime start) {
-        this.start = start;
+    public void setFacility(Facility facility) {
+        this.facility = facility;
     }
 
-    public LocalDateTime getEnd() {
-        return end;
+    public NavigableSet<CapacityDetail> getDetails() {
+        return details;
     }
 
-    public void setEnd(LocalDateTime end) {
-        this.end = end;
-    }
-
-    public double getQty() {
-        return qty;
-    }
-
-    public void setQty(double qty) {
-        this.qty = qty;
+    public void setDetails(NavigableSet<CapacityDetail> details) {
+        this.details = details;
     }
 }

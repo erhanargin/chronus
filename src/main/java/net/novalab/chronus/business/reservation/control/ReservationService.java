@@ -2,24 +2,20 @@ package net.novalab.chronus.business.reservation.control;
 
 import net.novalab.chronus.business.capacity.control.CapacityManager;
 import net.novalab.chronus.business.capacity.entity.Capacity;
-import net.novalab.chronus.business.capacityrequirement.control.CapacityRequirementCalculator;
-import net.novalab.chronus.business.capacityrequirement.entity.CapacityRequirement;
+import net.novalab.chronus.business.capacity.entity.CapacityDetail;
 import net.novalab.chronus.business.reservation.entity.Reservation;
+import net.novalab.chronus.business.reservation.entity.ReservationCandidate;
 import net.novalab.chronus.business.reservationcontext.entity.ReservationContext;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.NavigableSet;
+import java.util.List;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 public class ReservationService {
     @Inject
     CapacityManager capacityManager;
-    @Inject
-    CapacityRequirementCalculator capacityRequirementCalculator;
     @Inject
     ReservationValidator reservationValidator;
     @Inject
@@ -28,19 +24,32 @@ public class ReservationService {
     EntityManager entityManager;
 
     public Reservation reserve() {
-        CapacityRequirement capacityRequirement = capacityRequirementCalculator.calculate(reservationContext.getProduct(),
-                reservationContext.getQty());
-        NavigableSet<Capacity> availableCapacities = capacityManager.getAvailableCapacities(capacityRequirement);
-        NavigableSet<Capacity> validatedCapacities = reservationValidator.validate(availableCapacities);
-        Map<LocalDateTime, CapacityRequirement> requirements = validatedCapacities.stream().collect(toMap(Capacity::getStart,
-                capacity -> capacityRequirementCalculator.calculate(reservationContext.getProduct(), capacity.getQty())));
-        capacityManager.allocate(requirements);
-        Reservation reservation = prepareReservation(validatedCapacities);
+        List<Capacity> availableCapacities = capacityManager
+                .getAvailableCapacities(reservationContext.getProduct(), reservationContext.getQty());
+        List<ReservationCandidate> reservationCandidates = availableCapacities.stream()
+                .map(capacity -> new ReservationCandidate(capacity, reservationValidator.validate(capacity)))
+                .collect(toList());
+        ReservationCandidate bestCandidate = reservationValidator.findBestCandidate(reservationCandidates);
+        updateCapacityWithValidatedCapacity(bestCandidate.getOriginalCapacity(), bestCandidate.getValidatedRequirement());
+        capacityManager.allocate(bestCandidate.getOriginalCapacity());
+        Reservation reservation = prepareReservation(bestCandidate.getValidatedRequirement());
         entityManager.persist(reservation);
         return reservation;
     }
 
-    private Reservation prepareReservation(NavigableSet<Capacity> validatedCapacities) {
+    private void updateCapacityWithValidatedCapacity(Capacity originalCapacity, Capacity validatedRequirement) {
+        for(CapacityDetail requirementDetail : validatedRequirement.getDetails()){
+            CapacityDetail originalCapacityDetail = originalCapacity.getDetails().stream()
+                    .filter(capacityDetail -> capacityDetail.getStart().isEqual(requirementDetail.getStart()))
+                    .findFirst().get();
+            originalCapacityDetail.setQty(originalCapacityDetail.getQty() - requirementDetail.getQty());
+            if(originalCapacityDetail.getQty() < 0){
+                originalCapacity.getDetails().remove(originalCapacityDetail);
+            }
+        }
+    }
+
+    private Reservation prepareReservation(Capacity validatedCapacity) {
         return null;
     }
 

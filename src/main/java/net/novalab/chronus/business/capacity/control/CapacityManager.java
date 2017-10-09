@@ -1,14 +1,12 @@
 package net.novalab.chronus.business.capacity.control;
 
 import net.novalab.chronus.business.capacity.entity.Capacity;
-import net.novalab.chronus.business.capacityrequirement.entity.CapacityRequirement;
+import net.novalab.chronus.business.reservation.entity.Product;
 
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.NavigableSet;
+import java.util.List;
 
 public interface CapacityManager {
-    NavigableSet<Capacity> getAvailableCapacities(CapacityRequirement capacityRequirement);
+    List<Capacity> getAvailableCapacities(Product product, double qty);
 
-    void allocate(Map<LocalDateTime, CapacityRequirement> allocations);
+    void allocate(Capacity capacity);
 }
