@@ -6,6 +6,7 @@ import net.novalab.chronus.business.capacity.entity.CapacityDetail;
 import net.novalab.chronus.business.reservation.entity.Reservation;
 import net.novalab.chronus.business.reservation.entity.ReservationCandidate;
 import net.novalab.chronus.business.reservationcontext.entity.ReservationContext;
+import net.novalab.chronus.business.reservationcontext.entity.ReservationRequest;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -24,17 +25,23 @@ public class ReservationService {
     EntityManager entityManager;
 
     public Reservation reserve() {
+        for(ReservationRequest reservationRequest : reservationContext.getReservationRequests()){
+            processReservationRequest(reservationRequest);
+        }
+        Reservation reservation = prepareReservation(bestCandidate.getValidatedRequirement());
+        entityManager.persist(reservation);
+        return reservation;
+    }
+
+    private void processReservationRequest(ReservationRequest reservationRequest) {
         List<Capacity> availableCapacities = capacityManager
-                .getAvailableCapacities(reservationContext.getProduct(), reservationContext.getQty());
+                .getAvailableCapacities(reservationRequest.getProduct(), reservationRequest.getQty());
         List<ReservationCandidate> reservationCandidates = availableCapacities.stream()
                 .map(capacity -> new ReservationCandidate(capacity, reservationValidator.validate(capacity)))
                 .collect(toList());
         ReservationCandidate bestCandidate = reservationValidator.findBestCandidate(reservationCandidates);
         updateCapacityWithValidatedCapacity(bestCandidate.getOriginalCapacity(), bestCandidate.getValidatedRequirement());
         capacityManager.allocate(bestCandidate.getOriginalCapacity());
-        Reservation reservation = prepareReservation(bestCandidate.getValidatedRequirement());
-        entityManager.persist(reservation);
-        return reservation;
     }
 
     private void updateCapacityWithValidatedCapacity(Capacity originalCapacity, Capacity validatedRequirement) {
@@ -42,8 +49,8 @@ public class ReservationService {
             CapacityDetail originalCapacityDetail = originalCapacity.getDetails().stream()
                     .filter(capacityDetail -> capacityDetail.getStart().isEqual(requirementDetail.getStart()))
                     .findFirst().get();
-            originalCapacityDetail.setQty(originalCapacityDetail.getQty() - requirementDetail.getQty());
-            if(originalCapacityDetail.getQty() < 0){
+            originalCapacityDetail.setCapacity(originalCapacityDetail.getCapacity() - requirementDetail.getCapacity());
+            if(originalCapacityDetail.getCapacity() < 0){
                 originalCapacity.getDetails().remove(originalCapacityDetail);
             }
         }

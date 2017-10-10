@@ -1,12 +1,19 @@
 package net.novalab.chronus.business.capacity.entity;
 
 
+import javax.persistence.Entity;
+import javax.persistence.Version;
 import java.time.LocalDateTime;
+import java.util.Date;
 
+@Entity
 public class CapacityDetail {
     private LocalDateTime start;
     private LocalDateTime end;
-    private double qty;
+    private double capacity;
+
+    @Version
+    private Date updatedTime;
 
     public LocalDateTime getStart() {
         return start;
@@ -24,11 +31,19 @@ public class CapacityDetail {
         this.end = end;
     }
 
-    public double getQty() {
-        return qty;
+    public double getCapacity() {
+        return capacity;
     }
 
-    public void setQty(double qty) {
-        this.qty = qty;
+    public void setCapacity(double capacity) {
+        this.capacity = capacity;
+    }
+
+    public Date getUpdatedTime() {
+        return updatedTime;
+    }
+
+    private void setUpdatedTime(Date updatedTime) {
+        this.updatedTime = updatedTime;
     }
 }
