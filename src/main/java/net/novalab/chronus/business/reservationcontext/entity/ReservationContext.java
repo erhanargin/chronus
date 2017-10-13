@@ -1,11 +1,13 @@
 package net.novalab.chronus.business.reservationcontext.entity;
 
-import net.novalab.chronus.business.reservation.entity.Customer;
-import net.novalab.chronus.business.reservation.entity.Product;
+import net.novalab.chronus.business.reservation.control.ReservationRequest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class ReservationContext {
+    private double requestedQty;
+    private LocalDateTime commitDate;
     private List<ReservationRequest> reservationRequests;
 
     public List<ReservationRequest> getReservationRequests() {

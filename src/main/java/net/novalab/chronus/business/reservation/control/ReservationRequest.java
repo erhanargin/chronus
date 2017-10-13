@@ -1,4 +1,4 @@
-package net.novalab.chronus.business.reservationcontext.entity;
+package net.novalab.chronus.business.reservation.control;
 
 import net.novalab.chronus.business.reservation.entity.Customer;
 import net.novalab.chronus.business.reservation.entity.Product;

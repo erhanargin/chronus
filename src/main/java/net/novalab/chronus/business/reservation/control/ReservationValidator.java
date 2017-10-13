@@ -4,11 +4,9 @@ import net.novalab.chronus.business.capacity.entity.Capacity;
 import net.novalab.chronus.business.reservation.entity.ReservationCandidate;
 
 import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
 
 public class ReservationValidator {
-    public Capacity validate(Capacity capacity) {
+    public Capacity validateCapacityForRequest(Capacity capacity, ReservationRequest reservationRequest) {
         return null;
     }
 
