@@ -24,22 +24,21 @@ public class ReservationService {
     @Inject
     EntityManager entityManager;
 
-    public Reservation reserve() {
-        //TODO: response'ların her biri farklı bir fabrikadan olabilir!!!!!!!!!!
-        List<ReservationResponse> reservationResponses = reservationContext.getReservationRequests().stream()
-                .map(this::requestReservation)
-                .collect(toList());
-        Reservation reservation = prepareReservation(bestCandidate.getValidatedRequirement());
-        entityManager.persist(reservation);
-        return reservation;
+    public ReservationResponse reserve() {
+        ReservationResponse response = requestReservation();
+        if (response.isSuccess()) {
+            Reservation reservation = prepareReservation(response);
+            entityManager.persist(reservation);
+        }
+        return response;
     }
 
-    private ReservationResponse requestReservation(ReservationRequest reservationRequest) {
-        ReservationResponse response = new ReservationResponse(reservationRequest);
+    private ReservationResponse requestReservation() {
+        ReservationResponse response = new ReservationResponse();
         List<Capacity> availableCapacities = capacityManager
-                .getAvailableCapacities(reservationRequest.getProduct(), reservationRequest.getQty());
+                .getAvailableCapacities(reservationContext.getProduct(), reservationContext.getRequestedQty());
         List<ReservationCandidate> reservationCandidates = availableCapacities.stream()
-                .map(capacity -> new ReservationCandidate(capacity, reservationValidator.validateCapacityForRequest(capacity, reservationRequest)))
+                .map(capacity -> new ReservationCandidate(capacity, reservationValidator.validateCapacityForRequest(capacity)))
                 .collect(toList());
         ReservationCandidate bestCandidate = reservationValidator.findBestCandidate(reservationCandidates);
         response.setCandidate(bestCandidate);
@@ -56,18 +55,18 @@ public class ReservationService {
     }
 
     private void updateCapacityWithValidatedCapacity(Capacity originalCapacity, Capacity validatedRequirement) {
-        for(CapacityDetail requirementDetail : validatedRequirement.getDetails()){
+        for (CapacityDetail requirementDetail : validatedRequirement.getDetails()) {
             CapacityDetail originalCapacityDetail = originalCapacity.getDetails().stream()
                     .filter(capacityDetail -> capacityDetail.getStart().isEqual(requirementDetail.getStart()))
                     .findFirst().get();
             originalCapacityDetail.setCapacity(originalCapacityDetail.getCapacity() - requirementDetail.getCapacity());
-            if(originalCapacityDetail.getCapacity() < 0){
+            if (originalCapacityDetail.getCapacity() < 0) {
                 originalCapacity.getDetails().remove(originalCapacityDetail);
             }
         }
     }
 
-    private Reservation prepareReservation(Capacity validatedCapacity) {
+    private Reservation prepareReservation(ReservationResponse response) {
         return null;
     }
 

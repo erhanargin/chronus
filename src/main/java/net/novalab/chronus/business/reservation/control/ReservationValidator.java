@@ -6,7 +6,7 @@ import net.novalab.chronus.business.reservation.entity.ReservationCandidate;
 import java.util.List;
 
 public class ReservationValidator {
-    public Capacity validateCapacityForRequest(Capacity capacity, ReservationRequest reservationRequest) {
+    public Capacity validateCapacityForRequest(Capacity capacity) {
         return null;
     }
 
