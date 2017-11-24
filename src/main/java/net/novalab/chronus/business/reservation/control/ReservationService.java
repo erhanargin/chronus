@@ -2,7 +2,6 @@ package net.novalab.chronus.business.reservation.control;
 
 import net.novalab.chronus.business.capacity.control.CapacityManager;
 import net.novalab.chronus.business.capacity.entity.Capacity;
-import net.novalab.chronus.business.capacity.entity.CapacityDetail;
 import net.novalab.chronus.business.reservation.entity.Reservation;
 import net.novalab.chronus.business.reservation.entity.ReservationValidationInfo;
 import net.novalab.chronus.business.reservationcontext.entity.ReservationContext;
@@ -33,6 +32,14 @@ public class ReservationService {
     }
 
     private ReservationResponse requestReservation() {
+        ReservationResponse response = find();
+        if (response.isSuccess()) {
+            allocateCapacity(response);
+        }
+        return response;
+    }
+
+    public ReservationResponse find() {
         ReservationResponse response = new ReservationResponse();
         List<Capacity> availableCapacities = capacityManager
                 .getAvailableCapacities(reservationContext.getProduct(), reservationContext.getRequestedQty());
@@ -42,37 +49,23 @@ public class ReservationService {
         List<ReservationValidationInfo> validInfos = validationInfos.stream()
                 .filter(ReservationValidationInfo::isValid).collect(toList());
         if (!validInfos.isEmpty()) {
-            ReservationValidationInfo bestCandidate = reservationValidator.findBestCandidate(validInfos);
-            response.setCandidate(bestCandidate);
-            updateCapacityWithValidatedCapacity(bestCandidate.getOriginalCapacity(), bestCandidate.getValidatedRequirement());
-            try {
-                capacityManager.allocate(bestCandidate.getOriginalCapacity());
-                response.setSuccess(true);
-            } catch (Exception e) {
-                //TODO exception mekanizması düzenlenmeli
-                e.printStackTrace();
-                response.setSuccess(false);
-            }
-        } else {
-            //TODO: burası pek olmadı
-            if (!validationInfos.isEmpty()) {
-                ReservationValidationInfo validationInfo = validationInfos.get(0);
-                response.setConstraintViolations(validationInfo.getConstraintViolations());
-            }
-            response.setSuccess(false);
+            response.setCandidate(reservationValidator.findBestCandidate(validInfos));
+            response.setSuccess(true);
+        } else if (!validationInfos.isEmpty()) {
+            response.setConstraintViolations(validationInfos.get(0).getConstraintViolations());
         }
         return response;
     }
 
-    private void updateCapacityWithValidatedCapacity(Capacity originalCapacity, Capacity validatedRequirement) {
-        for (CapacityDetail requirementDetail : validatedRequirement.getDetails()) {
-            CapacityDetail originalCapacityDetail = originalCapacity.getDetails().stream()
-                    .filter(capacityDetail -> capacityDetail.getStart().isEqual(requirementDetail.getStart()))
-                    .findFirst().get();
-            originalCapacityDetail.setCapacity(originalCapacityDetail.getCapacity() - requirementDetail.getCapacity());
-            if (originalCapacityDetail.getCapacity() < 0) {
-                originalCapacity.getDetails().remove(originalCapacityDetail);
-            }
+    private void allocateCapacity(ReservationResponse response) {
+        try {
+            ReservationValidationInfo bestCandidate = response.getCandidate();
+            capacityManager.updateCapacityWithValidatedCapacity(bestCandidate.getOriginalCapacity(),
+                    bestCandidate.getValidatedRequirement());
+        } catch (Exception e) {
+            //TODO exception mekanizması düzenlenmeli
+            e.printStackTrace();
+            response.setSuccess(false);
         }
     }
 

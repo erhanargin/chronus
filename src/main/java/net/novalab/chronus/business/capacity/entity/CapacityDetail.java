@@ -1,6 +1,8 @@
 package net.novalab.chronus.business.capacity.entity;
 
 
+import net.novalab.chronus.business.reservation.entity.Facility;
+
 import javax.persistence.Entity;
 import javax.persistence.Version;
 import java.time.LocalDateTime;
@@ -11,9 +13,9 @@ public class CapacityDetail {
     private LocalDateTime start;
     private LocalDateTime end;
     private double capacity;
-
     @Version
     private Date updatedTime;
+    private Facility facility;
 
     public LocalDateTime getStart() {
         return start;
@@ -45,5 +47,13 @@ public class CapacityDetail {
 
     private void setUpdatedTime(Date updatedTime) {
         this.updatedTime = updatedTime;
+    }
+
+    public Facility getFacility() {
+        return facility;
+    }
+
+    public void setFacility(Facility facility) {
+        this.facility = facility;
     }
 }
